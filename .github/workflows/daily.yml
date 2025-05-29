@@ -53,6 +53,7 @@ jobs:
           path: |
             /home/runner/data/cache
           key: ${{ runner.os }}-${{ matrix.python }}-onnxruntime-${{ env.version }}
+          restore-keys: ${{ runner.os }}-${{ matrix.python }}-onnxruntime-
 
       - name: Build wheels
         run: |
