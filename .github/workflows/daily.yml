@@ -52,17 +52,18 @@ jobs:
         with:
           path: |
             /home/runner/data/cache
-          key: ${{ runner.os }}-onnxruntime-${{ env.version }}
+          key: ${{ runner.os }}-${{ matrix.python }}-onnxruntime-${{ env.version }}
 
       - name: Build wheels
         run: |
           docker run --rm \
+            --platform linux/loong64 \
             --volume "$(pwd):/onnxruntime_src" \
             --volume /home/runner/data/cache:/home/onnxruntimedev/.cache \
             -w /onnxruntime_src \
             -e ALLOW_RELEASED_ONNX_OPSET_ONLY=0 \
             ghcr.io/loong64/onnxruntimecpubuildpythonloongarch64:v1.22.0 \
-            sh -c 'set -ex; PATH=/opt/python/cp${{ matrix.python }}-cp${{ matrix.python }}/bin:$PATH && python3 -m pip install --user -r tools/ci_build/github/linux/python/requirements.txt && python3 tools/ci_build/build.py --build_dir build/Release --config Release --cmake_generator Ninja --skip_submodule_sync --skip_tests --build_shared_lib --parallel --use_vcpkg --use_vcpkg_ms_internal_asset_cache --use_binskim_compliant_compile_flags --build_wheel --cmake_extra_defines onnxruntime_BUILD_BENCHMARKS=ON --cmake_extra_defines onnxruntime_ENABLE_CPUINFO=OFF && auditwheel repair -w wheelhouse build/Release/Release/dist/*.whl'
+            sh -c 'set -ex; PATH=/opt/python/${{ matrix.python }}-${{ matrix.python }}/bin:$PATH && python3 -m pip install --user -r tools/ci_build/github/linux/python/requirements.txt && python3 tools/ci_build/build.py --build_dir build/Release --config Release --cmake_generator Ninja --skip_submodule_sync --skip_tests --build_shared_lib --parallel --use_vcpkg --use_vcpkg_ms_internal_asset_cache --use_binskim_compliant_compile_flags --build_wheel --cmake_extra_defines onnxruntime_BUILD_BENCHMARKS=ON --cmake_extra_defines onnxruntime_ENABLE_CPUINFO=OFF && auditwheel repair -w wheelhouse build/Release/Release/dist/*.whl'
 
       - name: Upload wheels
         run: |
