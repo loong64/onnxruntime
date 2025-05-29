@@ -46,26 +46,46 @@ jobs:
         if: env.build == '1'
         uses: docker/setup-qemu-action@v3
 
-      - name: Cache
+      - name: Cache Build
         if: env.build == '1'
-        uses: actions/cache@v4
+        id: cache-restore
+        uses: actions/cache/restore@v4
         with:
           path: |
-            /home/runner/data/cache
-          key: ${{ runner.os }}-${{ matrix.python }}-onnxruntime-${{ env.version }}
+            /home/runner/data
+          key: ${{ runner.os }}-${{ matrix.python }}-onnxruntime-${{ env.version }}-
+
+      - name: Set permissions
+        if: env.build == '1'
+        run: |
+          mkdir -p /home/runner/data/build /home/runner/data/cache
+          sudo chmod -R 777 /home/runner/data
+          sudo chown -R 1001:docker /home/runner/data
 
       - name: Build wheels
+        if: env.build == '1'
+        timeout-minutes: 300
         run: |
           docker run --rm \
             --platform linux/loong64 \
             --volume "$(pwd):/onnxruntime_src" \
+            --volume /home/runner/data/build:/onnxruntime_src/build \
             --volume /home/runner/data/cache:/home/onnxruntimedev/.cache \
             -w /onnxruntime_src \
             -e ALLOW_RELEASED_ONNX_OPSET_ONLY=0 \
-            ghcr.io/loong64/onnxruntimecpubuildpythonloongarch64:v1.22.0 \
-            sh -c 'set -ex; PATH=/opt/python/${{ matrix.python }}-${{ matrix.python }}/bin:$PATH && python3 -m pip install --user -r tools/ci_build/github/linux/python/requirements.txt && python3 tools/ci_build/build.py --build_dir build/Release --config Release --cmake_generator Ninja --skip_submodule_sync --skip_tests --build_shared_lib --parallel --use_vcpkg --use_vcpkg_ms_internal_asset_cache --use_binskim_compliant_compile_flags --build_wheel --cmake_extra_defines onnxruntime_BUILD_BENCHMARKS=ON --cmake_extra_defines onnxruntime_ENABLE_CPUINFO=OFF && auditwheel repair -w wheelhouse build/Release/Release/dist/*.whl'
+            ghcr.io/loong64/onnxruntimecpubuildpythonloongarch64:${{ env.version }} \
+            sh -c 'set -ex; PATH=/opt/python/${{ matrix.python }}-${{ matrix.python }}/bin:$PATH && python3 -m pip install --user -r tools/ci_build/github/linux/python/requirements.txt && python3 tools/ci_build/build.py --build_dir build/Release --config Release --cmake_generator Ninja --skip_submodule_sync --skip_tests --build_shared_lib --parallel --use_cache --use_vcpkg --use_vcpkg_ms_internal_asset_cache --use_binskim_compliant_compile_flags --build_wheel --cmake_extra_defines onnxruntime_BUILD_BENCHMARKS=ON && auditwheel repair -w wheelhouse build/Release/Release/dist/*.whl'
+
+      - name: Save Cache
+        if: always() && env.build == '1'
+        id: cache-save
+        uses: actions/cache/save@v4
+        with:
+          path: /home/runner/data
+          key: ${{ runner.os }}-${{ matrix.python }}-onnxruntime-${{ env.version }}-${{ github.run_id }}
 
       - name: Upload wheels
+        if: env.build == '1'
         run: |
           pip install twine==6.0.1
           for file in wheelhouse/*.whl; do
@@ -76,7 +96,8 @@ jobs:
           TWINE_PASSWORD: ${{ secrets.GL_TOKEN }}
 
       - name: Upload release
-        run:
-          gh release upload ${{ needs.check.outputs.version }} -R ${{ github.repository }} wheelhouse/*.whl --clobber
+        if: env.build == '1'
+        run: |
+          gh release upload ${{ env.version }} -R ${{ github.repository }} wheelhouse/*.whl --clobber
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
