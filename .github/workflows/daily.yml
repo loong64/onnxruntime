@@ -1,0 +1,81 @@
+name: build (onnxruntime)
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: 0 1 * * *
+
+jobs:
+  linux-wheel:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: [ 'cp310', 'cp311', 'cp312', 'cp313' ]
+    steps:
+      - name: Check Build
+        run: |
+          version=$(curl -s "https://api.github.com/repos/microsoft/onnxruntime/releases/latest" | jq -r .tag_name)
+          if [ -z "${version}" ] || [ "${version}" == "null" ]; then
+            echo "Failed to get version"
+            exit 1
+          fi
+
+          echo "version=${version}" >> $GITHUB_ENV
+          echo ""
+          echo "========== Build Args =========="
+          echo "onnxruntime version: ${version}"
+
+          gh release view ${version} -R ${{ github.repository }} | grep onnxruntime-.*.whl >/dev/null 2>&1 || echo "build=1" >> $GITHUB_ENV
+
+      - name: Checkout Code
+        if: env.build == '1'
+        uses: actions/checkout@v4
+        with:
+          repository: microsoft/onnxruntime
+          ref: ${{ env.version }}
+          submodules: true
+
+      - name: Patch Code
+        if: env.build == '1'
+        run: |
+          wget -qO - https://github.com/loong64/onnxruntime/raw/refs/heads/main/fix_strict_aliasing_quantize.patch | patch -p1
+          wget -qO cmake/vcpkg-ports/cpuinfo/cpuinfo_loong64.patch https://github.com/loong64/pytorch/raw/refs/heads/main/cpuinfo/cpuinfo_loong64.patch
+
+      - name: Setup QEMU
+        if: env.build == '1'
+        uses: docker/setup-qemu-action@v3
+
+      - name: Cache
+        if: env.build == '1'
+        uses: actions/cache@v4
+        with:
+          path: |
+            /home/runner/data/cache
+          key: ${{ runner.os }}-onnxruntime-${{ env.version }}
+
+      - name: Build wheels
+        run: |
+          docker run --rm \
+            --volume "$(pwd):/onnxruntime_src" \
+            --volume /home/runner/data/cache:/home/onnxruntimedev/.cache \
+            -w /onnxruntime_src \
+            -e ALLOW_RELEASED_ONNX_OPSET_ONLY=0 \
+            ghcr.io/loong64/onnxruntimecpubuildpythonloongarch64:v1.22.0 \
+            sh -c 'set -ex; PATH=/opt/python/cp${{ matrix.python }}-cp${{ matrix.python }}/bin:$PATH && python3 -m pip install --user -r tools/ci_build/github/linux/python/requirements.txt && python3 tools/ci_build/build.py --build_dir build/Release --config Release --cmake_generator Ninja --skip_submodule_sync --skip_tests --build_shared_lib --parallel --use_vcpkg --use_vcpkg_ms_internal_asset_cache --use_binskim_compliant_compile_flags --build_wheel --cmake_extra_defines onnxruntime_BUILD_BENCHMARKS=ON --cmake_extra_defines onnxruntime_ENABLE_CPUINFO=OFF && auditwheel repair -w wheelhouse build/Release/Release/dist/*.whl'
+
+      - name: Upload wheels
+        run: |
+          pip install twine==6.0.1
+          for file in wheelhouse/*.whl; do
+            twine upload --repository-url https://gitlab.com/api/v4/projects/65746188/packages/pypi $file || true
+          done
+        env:
+          TWINE_USERNAME: ${{ github.repository_owner }}
+          TWINE_PASSWORD: ${{ secrets.GL_TOKEN }}
+
+      - name: Upload release
+        run:
+          gh release upload ${{ needs.check.outputs.version }} -R ${{ github.repository }} wheelhouse/*.whl --clobber
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

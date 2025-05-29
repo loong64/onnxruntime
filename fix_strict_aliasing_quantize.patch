@@ -1,0 +1,44 @@
+diff --git a/cmake/vcpkg-ports/cpuinfo/portfile.cmake b/cmake/vcpkg-ports/cpuinfo/portfile.cmake
+index e61308b..03377ca 100644
+--- a/cmake/vcpkg-ports/cpuinfo/portfile.cmake
++++ b/cmake/vcpkg-ports/cpuinfo/portfile.cmake
+@@ -9,6 +9,9 @@ vcpkg_from_github(
+     REF 8a1772a0c5c447df2d18edf33ec4603a8c9c04a6
+     SHA512 b94ccbfa886221d6bb16513d074675af0a72928a9dd9485dcacdc1124a8a60aacbbe91913a1579e766dfb024f0be1d52eeead40342004ff0238a8b94a095ed08
+     HEAD_REF master
++
++    PATCHES
++      cpuinfo_loong64.patch
+ )
+ 
+ vcpkg_check_features(OUT_FEATURE_OPTIONS FEATURE_OPTIONS
+diff --git a/onnxruntime/core/mlas/lib/quantize.cpp b/onnxruntime/core/mlas/lib/quantize.cpp
+index ae638fa..78fa4fa 100644
+--- a/onnxruntime/core/mlas/lib/quantize.cpp
++++ b/onnxruntime/core/mlas/lib/quantize.cpp
+@@ -18,6 +18,7 @@ Abstract:
+ 
+ --*/
+ 
++#include <cstring>
+ #include "mlasi.h"
+ 
+ #if defined(MLAS_NEON64_INTRINSICS) || defined(MLAS_SSE2_INTRINSICS) || \
+@@ -1704,8 +1705,15 @@ MlasRequantizeOutput(
+     float min_f = float(std::numeric_limits<OutputType>::lowest() - ZeroPoint);
+     float max_f = float(std::numeric_limits<OutputType>::max() - ZeroPoint);
+     const __m128 PerMatrixScaleVector = PerColumnScale ? MlasReinterpretAsFloat32x4(__lsx_vldi(0)) : MlasReinterpretAsFloat32x4(__lsx_vldrepl_w(Scale, 0));
+-    const __m128 MinimumValueVector = MlasReinterpretAsFloat32x4(__lsx_vreplgr2vr_w( *((uint32_t*)&min_f)));
+-    const __m128 MaximumValueVector = MlasReinterpretAsFloat32x4(__lsx_vreplgr2vr_w( *((uint32_t*)&max_f)));
++
++    uint32_t min_f_bits;
++    std::memcpy(&min_f_bits, &min_f, sizeof(uint32_t));
++    const __m128 MinimumValueVector = MlasReinterpretAsFloat32x4(__lsx_vreplgr2vr_w(min_f_bits));
++
++    uint32_t max_f_bits;
++    std::memcpy(&max_f_bits, &max_f, sizeof(uint32_t));
++    const __m128 MaximumValueVector = MlasReinterpretAsFloat32x4(__lsx_vreplgr2vr_w(max_f_bits));
++
+     const __m128i ZeroPointVector = __lsx_vreplgr2vr_w(ZeroPoint);
+ 
+     if (nullptr != Bias) {
