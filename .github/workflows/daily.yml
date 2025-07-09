@@ -3,7 +3,7 @@ name: build (onnxruntime)
 on:
   workflow_dispatch:
   schedule:
-    - cron: 0 1 * * *
+    - cron: 0 2 * * *
 
 jobs:
   linux-wheel:
@@ -27,6 +27,8 @@ jobs:
           echo "onnxruntime version: ${version}"
 
           gh release view ${version} -R ${{ github.repository }} | grep onnxruntime-.*.whl >/dev/null 2>&1 || echo "build=1" >> $GITHUB_ENV
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Checkout Code
         if: env.build == '1'
