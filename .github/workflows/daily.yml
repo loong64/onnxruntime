@@ -26,7 +26,7 @@ jobs:
           echo "========== Build Args =========="
           echo "onnxruntime version: ${version}"
 
-          gh release view ${version} -R ${{ github.repository }} | grep onnxruntime-.*.whl >/dev/null 2>&1 || echo "build=1" >> $GITHUB_ENV
+          gh release view ${version} -R ${{ github.repository }} | grep onnxruntime-${version/v/}-${{ matrix.python }}.*.whl >/dev/null 2>&1 || echo "build=1" >> $GITHUB_ENV
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -66,7 +66,7 @@ jobs:
 
       - name: Build wheels
         if: env.build == '1'
-        timeout-minutes: 300
+        timeout-minutes: 330
         run: |
           docker run --rm \
             --platform linux/loong64 \
