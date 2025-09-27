@@ -41,8 +41,8 @@ jobs:
       - name: Patch Code
         if: env.build == '1'
         run: |
-          wget -qO - https://github.com/loong64/onnxruntime/raw/refs/heads/main/fix_strict_aliasing_quantize.patch | patch -p1
-          wget -qO cmake/vcpkg-ports/cpuinfo/cpuinfo_loong64.patch https://github.com/loong64/pytorch/raw/refs/heads/main/cpuinfo/cpuinfo_loong64.patch
+          wget -qO - https://github.com/loong64/onnxruntime/raw/refs/heads/main/patch_loong64.patch | patch -p1
+          wget -qO cmake/vcpkg-ports/cpuinfo/patch_cpuinfo_h_for_loong64.patch https://github.com/loong64/pytorch/raw/refs/heads/main/cpuinfo/cpuinfo_loong64.patch
 
       - name: Setup QEMU
         if: env.build == '1'

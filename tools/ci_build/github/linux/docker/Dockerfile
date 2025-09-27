@@ -9,6 +9,7 @@ RUN mkdir -p /tmp/scripts && \
 
 ADD scripts /tmp/scripts
 RUN cd /tmp/scripts && /tmp/scripts/install_centos.sh && /tmp/scripts/install_deps.sh && rm -rf /tmp/scripts && \
+    yum install -y ccache zip && \
     yum clean all
 
 ENV USE_CCACHE=1

@@ -1,0 +1,12 @@
+diff --git a/cmake/vcpkg-ports/cpuinfo/portfile.cmake b/cmake/vcpkg-ports/cpuinfo/portfile.cmake
+index 917fd29..d0165e1 100644
+--- a/cmake/vcpkg-ports/cpuinfo/portfile.cmake
++++ b/cmake/vcpkg-ports/cpuinfo/portfile.cmake
+@@ -11,6 +11,7 @@ vcpkg_from_github(
+     HEAD_REF master
+     PATCHES
+         patch_cpuinfo_h_for_arm64ec.patch
++        patch_cpuinfo_h_for_loong64.patch
+ )
+ 
+ vcpkg_check_features(OUT_FEATURE_OPTIONS FEATURE_OPTIONS
