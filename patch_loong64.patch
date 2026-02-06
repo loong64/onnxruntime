@@ -1,5 +1,5 @@
 diff --git a/cmake/vcpkg-ports/cpuinfo/portfile.cmake b/cmake/vcpkg-ports/cpuinfo/portfile.cmake
-index 917fd29..d0165e1 100644
+index 67bd18e..9c8610d 100644
 --- a/cmake/vcpkg-ports/cpuinfo/portfile.cmake
 +++ b/cmake/vcpkg-ports/cpuinfo/portfile.cmake
 @@ -11,6 +11,7 @@ vcpkg_from_github(
@@ -7,6 +7,6 @@ index 917fd29..d0165e1 100644
      PATCHES
          patch_cpuinfo_h_for_arm64ec.patch
 +        patch_cpuinfo_h_for_loong64.patch
+         patch_vcpkg_arm64ec_support.patch       # https://github.com/pytorch/cpuinfo/pull/324
+         win_arm_fp16_detection_fallback.patch   # https://github.com/pytorch/cpuinfo/pull/348
  )
- 
- vcpkg_check_features(OUT_FEATURE_OPTIONS FEATURE_OPTIONS
