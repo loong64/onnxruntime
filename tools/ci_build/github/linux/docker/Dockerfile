@@ -1,4 +1,4 @@
-FROM ghcr.io/loong64/manylinux_2_38_loongarch64:2025.04.23-1
+FROM ghcr.io/loong64/manylinux_2_38_loongarch64:2025.10.13-0
 
 ENV PIP_EXTRA_INDEX_URL="https://gitlab.com/api/v4/projects/65746188/packages/pypi/simple"
 
