@@ -10,3 +10,19 @@ index 67bd18e..9c8610d 100644
          patch_vcpkg_arm64ec_support.patch       # https://github.com/pytorch/cpuinfo/pull/324
          win_arm_fp16_detection_fallback.patch   # https://github.com/pytorch/cpuinfo/pull/348
  )
+diff --git a/tools/ci_build/github/linux/build_linux_python_package.sh b/tools/ci_build/github/linux/build_linux_python_package.sh
+index 1915d84..c7946a6 100755
+--- a/tools/ci_build/github/linux/build_linux_python_package.sh
++++ b/tools/ci_build/github/linux/build_linux_python_package.sh
+@@ -111,9 +111,9 @@ do
+   # like xnnpack's cmakefile, it uses pythone3 to run a external command
+   python3_dir=$(dirname "$PYTHON_EXE")
+   ls "$python3_dir"
+-  ${PYTHON_EXE} -m pip install -r /onnxruntime_src/tools/ci_build/github/linux/python/requirements.txt
++  ${PYTHON_EXE} -m pip install -r /onnxruntime_src/tools/ci_build/github/linux/python/requirements.txt "cmake<4.0"
+   PATH=$python3_dir:$PATH ${PYTHON_EXE} /onnxruntime_src/tools/ci_build/build.py "${BUILD_ARGS[@]}"
+-  cp /build/"$BUILD_CONFIG"/dist/*.whl /build/dist
++  auditwheel repair -w wheelhouse /build/"$BUILD_CONFIG"/dist/*.whl
+ done
+ 
+ if [ "$ENABLE_CACHE" = true ] ; then

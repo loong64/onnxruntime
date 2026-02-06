@@ -11,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python: [ 'cp310', 'cp311', 'cp312', 'cp313' ]
+        python: [ 'cp311', 'cp312', 'cp313', 'cp313t', 'cp314', 'cp314t' ]
     steps:
       - name: Check Build
         run: |
@@ -32,7 +32,7 @@ jobs:
 
       - name: Checkout Code
         if: env.build == '1'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: microsoft/onnxruntime
           ref: ${{ env.version }}
@@ -48,43 +48,35 @@ jobs:
         if: env.build == '1'
         uses: docker/setup-qemu-action@v3
 
-      - name: Cache Build
-        if: env.build == '1'
-        id: cache-restore
-        uses: actions/cache/restore@v4
-        with:
-          path: |
-            /home/runner/data
-          key: ${{ runner.os }}-${{ matrix.python }}-onnxruntime-${{ env.version }}-
-
-      - name: Set permissions
-        if: env.build == '1'
-        run: |
-          mkdir -p /home/runner/data/build /home/runner/data/cache
-          sudo chmod -R 777 /home/runner/data
-          sudo chown -R 1001:docker /home/runner/data
-
       - name: Build wheels
         if: env.build == '1'
         timeout-minutes: 330
         run: |
+          mkdir -p "${HOME}/data/build"
+          DEVICE=CPU
+          BUILD_CONFIG=Release
+          DOCKER_SCRIPT_OPTIONS=("-d" "${DEVICE}" "-c" "${BUILD_CONFIG}")
+          PYTHON_VERSION=${{ matrix.python }}
+          if [ "${PYTHON_VERSION}" = "cp313t" ] || [ "${PYTHON_VERSION}" = "cp314t" ]; then
+            PYTHON_VERSION=${PYTHON_VERSION%t}
+          fi
+          PYTHON_EXES="/opt/python/${PYTHON_VERSION}-${{ matrix.python }}/bin/python"
+          if [ "${PYTHON_EXES}" != "" ] ; then
+            DOCKER_SCRIPT_OPTIONS+=("-p" "${PYTHON_EXES}")
+          fi
+          BUILD_EXTR_PAR='--use_binskim_compliant_compile_flags --build_wheel --cmake_extra_defines onnxruntime_BUILD_BENCHMARKS=ON'
+          if [ "${BUILD_EXTR_PAR}" != "" ] ; then
+            DOCKER_SCRIPT_OPTIONS+=("-x" "${BUILD_EXTR_PAR}")
+          fi
+          DOCKER_IMAGE="ghcr.io/loong64/onnxruntimecpubuildpythonloongarch64:${{ env.version }}"
+
           docker run --rm \
             --platform linux/loong64 \
             --volume "$(pwd):/onnxruntime_src" \
-            --volume /home/runner/data/build:/onnxruntime_src/build \
-            --volume /home/runner/data/cache:/home/onnxruntimedev/.cache \
+            --volume "${HOME}/data/build:/build" \
             -w /onnxruntime_src \
             -e ALLOW_RELEASED_ONNX_OPSET_ONLY=0 \
-            ghcr.io/loong64/onnxruntimecpubuildpythonloongarch64:${{ env.version }} \
-            sh -c 'set -ex; PATH=/opt/python/${{ matrix.python }}-${{ matrix.python }}/bin:$PATH && python3 -m pip install --user -r tools/ci_build/github/linux/python/requirements.txt && python3 tools/ci_build/build.py --build_dir build/Release --config Release --cmake_generator Ninja --skip_submodule_sync --skip_tests --build_shared_lib --parallel --use_cache --use_vcpkg --use_vcpkg_ms_internal_asset_cache --use_binskim_compliant_compile_flags --build_wheel --cmake_extra_defines onnxruntime_BUILD_BENCHMARKS=ON && auditwheel repair -w wheelhouse build/Release/Release/dist/*.whl'
-
-      - name: Save Cache
-        if: always() && env.build == '1'
-        id: cache-save
-        uses: actions/cache/save@v4
-        with:
-          path: /home/runner/data
-          key: ${{ runner.os }}-${{ matrix.python }}-onnxruntime-${{ env.version }}-${{ github.run_id }}
+            "$DOCKER_IMAGE" tools/ci_build/github/linux/build_linux_python_package.sh "${DOCKER_SCRIPT_OPTIONS[@]}"
 
       - name: Upload wheels
         if: env.build == '1'
