@@ -18,3 +18,4 @@ ARG BUILD_USER=onnxruntimedev
 RUN adduser --uid $BUILD_UID $BUILD_USER
 WORKDIR /home/$BUILD_USER
 USER $BUILD_USER
+ENV PATH="/home/$BUILD_USER/.local/bin:$PATH"
