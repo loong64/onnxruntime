@@ -10,6 +10,20 @@ index 67bd18e..9c8610d 100644
          patch_vcpkg_arm64ec_support.patch       # https://github.com/pytorch/cpuinfo/pull/324
          win_arm_fp16_detection_fallback.patch   # https://github.com/pytorch/cpuinfo/pull/348
  )
+diff --git a/onnxruntime/core/mlas/lib/sqnbitgemm_kernel_lasx.cpp b/onnxruntime/core/mlas/lib/sqnbitgemm_kernel_lasx.cpp
+index a43043e..c782fb8 100644
+--- a/onnxruntime/core/mlas/lib/sqnbitgemm_kernel_lasx.cpp
++++ b/onnxruntime/core/mlas/lib/sqnbitgemm_kernel_lasx.cpp
+@@ -32,7 +32,8 @@ QNBitGemmPackQuantBDataSize_Lasx(
+     size_t K,
+     size_t BlkLen,
+     bool /* HasZeroPoint */,
+-    MLAS_QNBIT_GEMM_COMPUTE_TYPE ComputeType
++    MLAS_QNBIT_GEMM_COMPUTE_TYPE ComputeType,
++    const MLAS_BACKEND_KERNEL_SELECTOR_CONFIG*
+ )
+ {
+     const size_t BlockCountK = MlasDivRoundup(K, BlkLen);
 diff --git a/tools/ci_build/github/linux/build_linux_python_package.sh b/tools/ci_build/github/linux/build_linux_python_package.sh
 index 27bf6f9..76147e4 100755
 --- a/tools/ci_build/github/linux/build_linux_python_package.sh
