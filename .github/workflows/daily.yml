@@ -15,7 +15,8 @@ jobs:
     steps:
       - name: Check Build
         run: |
-          version=$(curl -s "https://api.github.com/repos/microsoft/onnxruntime/releases/latest" | jq -r .tag_name)
+          package=onnxruntime
+          version=v$(curl -sSL "https://pypi.org/pypi/${package}/json" | jq -r '.info.version')
           if [ -z "${version}" ] || [ "${version}" == "null" ]; then
             echo "Failed to get version"
             exit 1
