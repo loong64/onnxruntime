@@ -52,7 +52,6 @@ BUILD_EXTR_PAR='--use_binskim_compliant_compile_flags --build_wheel --cmake_extr
 if [ "${BUILD_EXTR_PAR}" != "" ] ; then
   DOCKER_SCRIPT_OPTIONS+=("-x" "${BUILD_EXTR_PAR}")
 fi
-DOCKER_SCRIPT_OPTIONS+=("-e")
 DOCKER_IMAGE="ghcr.io/loong64/onnxruntimecpubuildpythonloongarch64:${ONNXRUNTIME_VERSION}"
   
 docker run --rm \
