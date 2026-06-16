@@ -25,7 +25,7 @@ mkdir -p /opt/data/${ONNXRUNTIME_VERSION}
 cd /opt/data/${ONNXRUNTIME_VERSION} || exit 1
 
 if [ ! -d "onnxruntime" ]; then
-  git clone --recursive --depth=1 -b ${ONNXRUNTIME_VERSION} https://github.com/microsoft/onnxruntime
+  git clone --recursive --depth=1 -b rel-${ONNXRUNTIME_VERSION/v/} https://github.com/microsoft/onnxruntime
 fi
 
 cd onnxruntime || exit 1
