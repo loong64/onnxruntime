@@ -29,7 +29,7 @@ jobs:
           echo "onnxruntime version: ${version}"
 
           python_version=${{ matrix.python }}
-          gh release view ${version} -R ${{ github.repository }} | grep onnxruntime-${version/v/}-${python_version%t}.*.whl >/dev/null 2>&1 || echo "build=1" >> $GITHUB_ENV
+          gh release view v${version} -R ${{ github.repository }} | grep onnxruntime-${version/v/}-${python_version%t}.*.whl >/dev/null 2>&1 || echo "build=1" >> $GITHUB_ENV
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
