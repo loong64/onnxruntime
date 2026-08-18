@@ -31,7 +31,7 @@ fi
 cd onnxruntime || exit 1
 if [ ! -f "cmake/vcpkg-ports/cpuinfo/patch_cpuinfo_h_for_loong64.patch" ]; then
   wget -qO - https://github.com/loong64/onnxruntime/raw/refs/heads/main/patch_loong64.patch | patch -p1
-  wget -qO cmake/vcpkg-ports/cpuinfo/patch_cpuinfo_h_for_loong64.patch https://github.com/loong64/cpuinfo/commit/e73f86b6404d99f9e52432ccbd58a6b4f24fc4a5.patch
+  wget -qO cmake/vcpkg-ports/cpuinfo/patch_cpuinfo_h_for_loong64.patch https://github.com/loong64/cpuinfo/commit/6d35f4b909c0c975eebd5e1d000b694762b48d0e.patch
 fi
 
 mkdir -p wheelhouse
