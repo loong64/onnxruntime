@@ -1,5 +1,77 @@
+diff --git a/cmake/patches/cpuinfo/enable_deinit_refcounting.patch b/cmake/patches/cpuinfo/enable_deinit_refcounting.patch
+index 960cfc6..b25ac29 100644
+--- a/cmake/patches/cpuinfo/enable_deinit_refcounting.patch
++++ b/cmake/patches/cpuinfo/enable_deinit_refcounting.patch
+@@ -249,18 +249,9 @@ diff --git a/src/cpuinfo/internal-api.h b/src/cpuinfo/internal-api.h
+ index d84b26a89cfc38e726216688e490f50799f31455..9c1588872da413535f2fb68fb96d6106b420ac49 100644
+ --- a/src/cpuinfo/internal-api.h
+ +++ b/src/cpuinfo/internal-api.h
+-@@ -45,6 +45,9 @@ extern CPUINFO_INTERNAL struct cpuinfo_uarch_info cpuinfo_global_uarch;
+- extern CPUINFO_INTERNAL uint32_t cpuinfo_linux_cpu_max;
+- extern CPUINFO_INTERNAL const struct cpuinfo_processor** cpuinfo_linux_cpu_to_processor_map;
+- extern CPUINFO_INTERNAL const struct cpuinfo_core** cpuinfo_linux_cpu_to_core_map;
+-+#if CPUINFO_ARCH_ARM || CPUINFO_ARCH_ARM64 || CPUINFO_ARCH_RISCV32 || CPUINFO_ARCH_RISCV64
+-+extern CPUINFO_INTERNAL const uint32_t* cpuinfo_linux_cpu_to_uarch_index_map;
+-+#endif
+- #endif
+- 
+- CPUINFO_PRIVATE void cpuinfo_x86_mach_init(void);
+-@@ -62,6 +65,23 @@ CPUINFO_PRIVATE void cpuinfo_arm_linux_init(void);
++@@ -63,6 +63,24 @@ CPUINFO_PRIVATE void cpuinfo_arm_linux_init(void);
+  CPUINFO_PRIVATE void cpuinfo_riscv_linux_init(void);
++ CPUINFO_PRIVATE void cpuinfo_loongarch_linux_init(void);
+  CPUINFO_PRIVATE void cpuinfo_emscripten_init(void);
+  
+ +/* Platform-specific deinitialization functions.
+@@ -278,6 +269,7 @@ index d84b26a89cfc38e726216688e490f50799f31455..9c1588872da413535f2fb68fb96d6106
+ +CPUINFO_PRIVATE void cpuinfo_arm_mach_deinit(void);
+ +CPUINFO_PRIVATE void cpuinfo_arm_linux_deinit(void);
+ +CPUINFO_PRIVATE void cpuinfo_riscv_linux_deinit(void);
+++CPUINFO_PRIVATE void cpuinfo_loongarch_linux_deinit(void);
+ +CPUINFO_PRIVATE void cpuinfo_emscripten_deinit(void);
+ +
+  CPUINFO_PRIVATE uint32_t cpuinfo_compute_max_cache_size(const struct cpuinfo_processor* processor);
+@@ -327,7 +319,7 @@ diff --git a/src/init.c b/src/init.c
+ index 81d5721c446f363cefcbb39d52507a2c07298c35..e3cd9217a9acfc9615f97a1aa6bb66d96f373910 100644
+ --- a/src/init.c
+ +++ b/src/init.c
+-@@ -13,55 +13,98 @@
++@@ -13,61 +13,108 @@
+  #endif
+  
+  #if defined(_WIN32) || defined(__CYGWIN__)
+@@ -403,6 +395,18 @@ index 81d5721c446f363cefcbb39d52507a2c07298c35..e3cd9217a9acfc9615f97a1aa6bb66d9
+ -	}
+ -	init_guard = true;
+ -#endif
++-#elif CPUINFO_ARCH_LOONGARCH64
++-#if defined(__linux__)
++-	pthread_once(&init_guard, &cpuinfo_loongarch_linux_init);
++-#else
++-	cpuinfo_log_error("loongarch operating system is not supported in cpuinfo");
++-#endif
+++#elif CPUINFO_ARCH_LOONGARCH64
+++#if defined(__linux__)
+++		cpuinfo_loongarch_linux_init();
+++#else
+++		cpuinfo_log_error("loongarch operating system is not supported in cpuinfo");
+++#endif
+  #else
+ -	cpuinfo_log_error("processor architecture is not supported in cpuinfo");
+ +		cpuinfo_log_error("processor architecture is not supported in cpuinfo");
+@@ -444,6 +448,10 @@ index 81d5721c446f363cefcbb39d52507a2c07298c35..e3cd9217a9acfc9615f97a1aa6bb66d9
+ +#if defined(__linux__)
+ +		cpuinfo_riscv_linux_deinit();
+ +#endif
+++#elif CPUINFO_ARCH_LOONGARCH64
+++#if defined(__linux__)
+++		cpuinfo_loongarch_linux_deinit();
+++#endif
+ +#elif CPUINFO_ARCH_ASMJS || CPUINFO_ARCH_WASM || CPUINFO_ARCH_WASMSIMD
+ +		cpuinfo_emscripten_deinit();
+ +#endif
 diff --git a/cmake/vcpkg-ports/cpuinfo/portfile.cmake b/cmake/vcpkg-ports/cpuinfo/portfile.cmake
-index 9140a23..77b3c8c 100644
+index aa2205b..595dea5 100644
 --- a/cmake/vcpkg-ports/cpuinfo/portfile.cmake
 +++ b/cmake/vcpkg-ports/cpuinfo/portfile.cmake
 @@ -11,6 +11,7 @@ vcpkg_from_github(
@@ -8,8 +80,8 @@ index 9140a23..77b3c8c 100644
          patch_cpuinfo_h_for_arm64ec.patch
 +        patch_cpuinfo_h_for_loong64.patch
          patch_vcpkg_arm64ec_support.patch       # https://github.com/pytorch/cpuinfo/pull/324
- )
- 
+         # https://github.com/pytorch/cpuinfo/pull/400
+         "${CMAKE_CURRENT_LIST_DIR}/../../patches/cpuinfo/enable_deinit_refcounting.patch"
 diff --git a/tools/ci_build/github/linux/build_linux_python_package.sh b/tools/ci_build/github/linux/build_linux_python_package.sh
 index abd3926..117c878 100755
 --- a/tools/ci_build/github/linux/build_linux_python_package.sh
