@@ -83,15 +83,12 @@ index aa2205b..595dea5 100644
          # https://github.com/pytorch/cpuinfo/pull/400
          "${CMAKE_CURRENT_LIST_DIR}/../../patches/cpuinfo/enable_deinit_refcounting.patch"
 diff --git a/tools/ci_build/github/linux/build_linux_python_package.sh b/tools/ci_build/github/linux/build_linux_python_package.sh
-index abd3926..117c878 100755
+index 6dfbc25..1d49d31 100755
 --- a/tools/ci_build/github/linux/build_linux_python_package.sh
 +++ b/tools/ci_build/github/linux/build_linux_python_package.sh
-@@ -140,9 +140,10 @@ do
-     # mypy 1.19+ dependencies do not support free-threaded CPython 3.13.
-     PIP_REQUIREMENTS+=("mypy<1.19")
+@@ -151,7 +151,8 @@ do
    fi
--  "${PYTHON_EXE}" -m pip install "${PIP_REQUIREMENTS[@]}"
-+  "${PYTHON_EXE}" -m pip install "${PIP_REQUIREMENTS[@]}" "cmake<4.0"
+   "${PYTHON_EXE}" -m pip install "${PIP_REQUIREMENTS[@]}"
    PATH=$python3_dir:$PATH ${PYTHON_EXE} /onnxruntime_src/tools/ci_build/build.py "${BUILD_ARGS[@]}"
 -  cp /build/"$BUILD_CONFIG"/dist/*.whl /build/dist
 +  # cp /build/"$BUILD_CONFIG"/dist/*.whl /build/dist
