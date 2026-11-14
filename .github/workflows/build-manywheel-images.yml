@@ -26,12 +26,13 @@ jobs:
 
       - name: Check release
         run: |
-          gh release view ${version} -R ${{ github.repository }} >/dev/null 2>&1 || echo "build=1" >> $GITHUB_ENV
+          gh release view ${version} -R ${{ github.repository }} | grep onnxruntime-.*.whl >/dev/null 2>&1 || echo "build=1" >> $GITHUB_ENV
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: actions/checkout@v6
         if: env.build == '1'
+
       - uses: docker/setup-qemu-action@v4
         if: env.build == '1'
       - uses: docker/setup-buildx-action@v4
@@ -49,7 +50,7 @@ jobs:
           wget -q https://github.com/microsoft/onnxruntime/raw/refs/heads/${branch}/tools/ci_build/github/linux/docker/inference/aarch64/python/cpu/scripts/install_protobuf.sh
           sed -i 's/redhat-lsb-core//g' install_centos.sh
           sed -i 's/redhat-release/anolis-release/g' install_centos.sh
-          # sed -i 's@ "/opt/python/cp313-cp313t/bin/python3.13"@@g' install_deps.sh
+          sed -i 's@ "/opt/python/cp313-cp313t/bin/python3.13"@@g' install_deps.sh
           sed -i 's@DISTRIBUTOR=.*@DISTRIBUTOR=CentOS@g' install_protobuf.sh
           chmod +x *.sh
 
