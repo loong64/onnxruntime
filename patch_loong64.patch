@@ -83,16 +83,15 @@ index aa2205b..595dea5 100644
          # https://github.com/pytorch/cpuinfo/pull/400
          "${CMAKE_CURRENT_LIST_DIR}/../../patches/cpuinfo/enable_deinit_refcounting.patch"
 diff --git a/tools/ci_build/github/linux/build_linux_python_package.sh b/tools/ci_build/github/linux/build_linux_python_package.sh
-index 6dfbc25..1d49d31 100755
+index d30aa80..12fc292 100755
 --- a/tools/ci_build/github/linux/build_linux_python_package.sh
 +++ b/tools/ci_build/github/linux/build_linux_python_package.sh
-@@ -151,7 +151,8 @@ do
+@@ -187,7 +187,7 @@ do
+     PATH=$python3_dir:$PATH ${PYTHON_EXE} /onnxruntime_src/tools/ci_build/build.py "${BUILD_ARGS[@]}" --build --build_wheel --target onnxruntime_pybind11_state
    fi
-   "${PYTHON_EXE}" -m pip install "${PIP_REQUIREMENTS[@]}"
-   PATH=$python3_dir:$PATH ${PYTHON_EXE} /onnxruntime_src/tools/ci_build/build.py "${BUILD_ARGS[@]}"
--  cp /build/"$BUILD_CONFIG"/dist/*.whl /build/dist
-+  # cp /build/"$BUILD_CONFIG"/dist/*.whl /build/dist
-+  auditwheel repair -w wheelhouse /build/"$BUILD_CONFIG"/dist/*.whl
- done
  
- if command -v ccache &> /dev/null; then
+-  cp /build/"$BUILD_CONFIG"/dist/*.whl /build/dist
++  auditwheel repair -w /build/dist /build/"$BUILD_CONFIG"/dist/*.whl
+   if [ "$MULTI_PYTHON_WHEEL" = "true" ]; then
+     # setup.py's auditwheel glob also matches previously repaired wheels.
+     rm -f /build/"$BUILD_CONFIG"/dist/*.whl
